@@ -1,5 +1,6 @@
 # Ai-Mental-Health-Chatbot
 
+<<<<<<< HEAD
 ## Setup
 
 1. Clone the repository:
@@ -127,3 +128,7 @@ def chat():
 if __name__ == '__main__': 
     app.run(host='0.0.0.0', port=5001, debug=True)
 
+=======
+
+api key: openai.api_key = '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'
+>>>>>>> 83be5d1 (Update README.md)
