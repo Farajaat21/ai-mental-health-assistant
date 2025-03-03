@@ -1,22 +1,16 @@
-import openai
+
+from openai import OpenAI
 from flask import Flask, request, jsonify, send_from_directory, render_template
 from flask_cors import CORS
 import os
-from dotenv import load_dotenv
-from werkzeug.urls import url_quote_plus  # Updated import
-=======
 from dotenv import load_dotenv 
-import database 
->>>>>>> d293eacc2d4900ac250e9d41bb7a6cf0d777baec
 
-database.create_database() 
-user_id = "1" #Replace with function to classify user
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 
-client = openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def chat_with_gpt(prompt):
     try:
@@ -50,12 +44,7 @@ def chat():
     
     
     print(f"Sending response: {gpt_response}")
-    database.logger(user_id, user_message, gpt_response)
-    return jsonify({"reply": gpt_response})   
+    return jsonify({"reply": gpt_response})
 
-<<<<<<< HEAD
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
-=======
 if __name__ == '__main__': 
     app.run(host='0.0.0.0', port=5000, debug=True)
