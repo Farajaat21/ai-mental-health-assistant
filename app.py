@@ -2,13 +2,11 @@ import openai
 from flask import Flask, request, jsonify, send_from_directory, render_template
 from flask_cors import CORS
 import os
-<<<<<<< HEAD
 from dotenv import load_dotenv
 from werkzeug.urls import url_quote_plus  # Updated import
 =======
 from dotenv import load_dotenv 
 import database 
->>>>>>> d293eacc2d4900ac250e9d41bb7a6cf0d777baec
 
 database.create_database() 
 user_id = "1" #Replace with function to classify user
