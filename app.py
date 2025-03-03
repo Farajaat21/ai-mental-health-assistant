@@ -1,16 +1,16 @@
-
-from openai import OpenAI
+import openai
 from flask import Flask, request, jsonify, send_from_directory, render_template
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
+from werkzeug.urls import url_quote_plus  # Updated import
 
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def chat_with_gpt(prompt):
     try:
