@@ -2,6 +2,7 @@ import openai
 from flask import Flask, request, jsonify, send_from_directory, render_template
 from flask_cors import CORS
 import os
+<<<<<<< HEAD
 from dotenv import load_dotenv
 from werkzeug.urls import url_quote_plus  # Updated import
 =======
@@ -59,3 +60,4 @@ if __name__ == '__main__':
 =======
 if __name__ == '__main__': 
     app.run(host='0.0.0.0', port=5000, debug=True)
+>>>>>>> d293eacc2d4900ac250e9d41bb7a6cf0d777baec
