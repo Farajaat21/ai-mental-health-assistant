@@ -1,4 +1,5 @@
 import openai
+from flask_httpauth import HTTPBasicAuth
 from flask import Flask, request, jsonify, send_from_directory, render_template
 from flask_cors import CORS
 import os
@@ -10,6 +11,7 @@ user_id = "1" #Replace with function to classify user
 load_dotenv()
 
 app = Flask(__name__)
+auth = HTTPBasicAuth()
 CORS(app)
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -40,6 +42,7 @@ def verify_password(username, password):
 @app.route("/")
 @auth.login_required
 def home_page():
+    print(auth.current_user())
     return render_template("main.html")
 
 @app.route('/static/<path:filename>')
@@ -49,6 +52,7 @@ def serve_static(filename):
 
 @app.route('/chat', methods=['POST'])
 @auth.login_required
+
 def chat():
     print("We got here")
     data = request.get_json()
