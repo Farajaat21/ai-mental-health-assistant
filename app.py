@@ -1,37 +1,45 @@
 import openai
 from flask_httpauth import HTTPBasicAuth
-from flask import Flask, request, jsonify, send_from_directory, render_template, redirect, url_for
+from flask import Flask, request, jsonify, send_from_directory, render_template, redirect, url_for, session
 from flask_cors import CORS
 import os
+import ssl
+import nltk
+from nltk.sentiment import SentimentIntensityAnalyzer
+ssl._create_default_https_context = ssl._create_unverified_context
+
+nltk.download('vader_lexicon')
 from dotenv import load_dotenv 
 import database 
-from models.info import app_description  # Import the app description
-from models.mood import analyze_mood  # Import the mood analysis function
-from models.user import add_user, verify_user  # Import user management functions
+from models.info import app_description  
+from models.mood import analyze_mood, get_gpt_response
+from models.user import add_user, verify_user, initialize_default_users  
+from models.chat import chat_manager, DEFAULT_QUOTES  
 
 database.create_database() 
+initialize_default_users() 
 load_dotenv()
 
 app = Flask(__name__)
+app.secret_key = 'your-secret-key-here'  
 auth = HTTPBasicAuth()
 CORS(app)
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-def chat_with_gpt(prompt):
+def chat_with_gpt(prompt, username=None, include_description=False):
     try:
-        # Analyze the user's mood
-        mood = analyze_mood(prompt)
+        emotional_state = analyze_mood(prompt)
+        emotion = emotional_state.split()[1]  # Get emotion without intensity
         
-        # Prepend the app description and mood analysis to the user's prompt
-        full_prompt = f"{app_description}\n\nUser Mood: {mood}\n\nUser: {prompt}"
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": full_prompt}]
-        )
-        return response.choices[0].message['content'].strip()
+        gpt_response = get_gpt_response(prompt, emotion)
+        if gpt_response is None:
+            return "I apologize, but I'm having trouble processing your request right now."
+            
+        return gpt_response
+        
     except Exception as e:
-        print(f"Error with OpenAI: {e}")
+        print(f"Error with chat: {e}")
         return None
 
 @auth.verify_password
@@ -40,14 +48,15 @@ def verify_password(username, password):
 
 @app.route("/")
 def home_page():
-    return redirect(url_for('login_page'))
+    return render_template('landing_page.html')
 
 @app.route("/login", methods=["GET", "POST"])
 def login_page():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
-        if verify_password(username, password):
+        if verify_user(username, password):
+            session['username'] = username
             return redirect(url_for('chat_page'))
         else:
             return render_template("loginPage.html", error="Invalid credentials")
@@ -58,14 +67,22 @@ def signup_page():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
-        if not add_user(username, password):
-            return render_template("signupPage.html", error="User already exists")
-        return redirect(url_for('login_page'))
+        
+        if database.add_user_to_db(username, password):
+            return redirect(url_for('login_page'))
+        return render_template("signupPage.html", error="Username already exists")
+    
     return render_template("signupPage.html")
 
 @app.route("/chat")
 def chat_page():
-    return render_template("main.html")
+    username = session.get('username')
+    if not username:
+        return redirect(url_for('login_page'))
+        
+    initial_response = chat_with_gpt(f"Hello {username}", username=username, include_description=True)
+    initial_quote = chat_manager.get_default_quote()
+    return render_template("main.html", initial_response=initial_response, quote=initial_quote, username=username)
 
 @app.route('/static/<path:filename>')
 def serve_static(filename):
@@ -75,14 +92,45 @@ def serve_static(filename):
 def chat():
     data = request.get_json()
     user_message = data.get('message', '')
+    print(f"Received message: {user_message}")
     
-    gpt_response = chat_with_gpt(user_message)
+    username = session.get('username')
+    gpt_response = chat_with_gpt(user_message, username=username)
     if gpt_response is None:
-        return jsonify({"reply": f"Sorry, the AI service is currently unavailable. Please try again later or api key not working.{os.getenv('OPENAI_API_KEY')}"})
+        error_message = f"Sorry, the AI service is currently unavailable. Please try again later or api key not working.{os.getenv('OPENAI_API_KEY')}"
+        print(error_message)
+        return jsonify({"reply": error_message})
     
     user_id = auth.current_user()
-    database.logger(user_id, user_message, gpt_response)
-    return jsonify({"reply": gpt_response})   
+    print(f"User ID for logging: {user_id}")
+    
+    
+    if user_id is not None:
+        print(f"Logging conversation: user_id={user_id}, user_message={user_message}, gpt_response={gpt_response}")
+        database.logger(user_id, user_message, gpt_response)
+    else:
+        print("Skipping database logging because user is not authenticated")
+    
+    return jsonify({"reply": gpt_response}) 
+
+@app.route('/quote', methods=['POST'])
+def quote():
+    data = request.get_json()
+    user_message = data.get('message', '')
+    print(f"Received message for quote: {user_message}")
+    
+    # Get mood for quote context
+    mood = analyze_mood(user_message)
+    quote_prompt = chat_manager.generate_quote_prompt(user_message, mood)
+    
+    quote_response = chat_with_gpt(quote_prompt)
+    if quote_response is None:
+        error_message = "Sorry, the AI service is currently unavailable. Please try again later."
+        print(error_message)
+        return jsonify({"quote": error_message})
+    
+    print(f"Sending quote response: {quote_response}")
+    return jsonify({"quote": quote_response})
 
 if __name__ == '__main__': 
     app.run(host='0.0.0.0', port=5001, debug=True)

@@ -1,7 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
     const quoteContainer = document.getElementById('quote');
-    const nextQuoteButton = document.getElementById('next-quote-button');
-
     const quotes = [
         "The only way to do great work is to love what you do. - Steve Jobs",
         "The best way to predict the future is to invent it. - Alan Kay",
@@ -11,13 +9,23 @@ document.addEventListener('DOMContentLoaded', function () {
     ];
 
     let currentQuoteIndex = 0;
+    let hasStartedChat = false;
 
     function displayNextQuote() {
-        currentQuoteIndex = (currentQuoteIndex + 1) % quotes.length;
-        quoteContainer.textContent = quotes[currentQuoteIndex];
+        if (!hasStartedChat) {
+            currentQuoteIndex = (currentQuoteIndex + 1) % quotes.length;
+            quoteContainer.innerHTML = `<p class="quote-text">${quotes[currentQuoteIndex]}</p>`;
+        }
     }
 
-    nextQuoteButton.addEventListener('click', displayNextQuote);
 
-    displayNextQuote();
+    quoteContainer.innerHTML = `<p class="quote-text">${quotes[0]}</p>`;
+
+    // Only start the quote rotation if no chat has occurred
+    const quoteInterval = setInterval(displayNextQuote, 10000);
+
+    window.startedChat = function() {
+        hasStartedChat = true;
+        clearInterval(quoteInterval);
+    };
 });

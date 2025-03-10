@@ -11,8 +11,23 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 </head>
 <body>
+    <div class="shapes-container">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+        <div class="shape shape-4"></div>
+    </div>
+    <nav class="nav-header">
+        <a href="#" class="nav-brand">MentalAI Care</a>
+        <div class="nav-links">
+            <a href="https://www.nimh.nih.gov/health/topics/anxiety-disorders" target="_blank">Talk </a>
+            <a href="https://www.nimh.nih.gov/health/topics/depression" target="_blank">Real Help</a>
+            <a href="https://www.nimh.nih.gov/health/topics/stress" target="_blank">Emergency</a>
+        </div>
+    </nav>
 
     <div class="wrapper">
 
@@ -36,13 +51,15 @@
                 <div class="right-main-content">
 
                     <div class="chat-header">
-                        <h1>Hi, I'm your mental Health AI!</h1>
+                        <h1>.. </h1>
                         <br>
-                        <p>How can I help today?</p>
+                        <p>Rant & Rise, together.
+                        </p>
                     </div>
 
                     <div id="chat-container" class="chat-container">
                         <!-- Chat messages will be displayed here -->
+                        <div class="message bot-message">{{ initial_response }}</div>
                     </div>
 
                     <div class="right_main-chat-input">
@@ -54,17 +71,38 @@
                         </button>
                     </div>
 
+                    <div class="quote-container">
+                        <div class="quote" id="quote">
+                            <p class="quote-text">{{ quote }}</p>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
-        <div class="quote-container">
-            <div class="quote" id="quote">
-                <!-- Quotes will be displayed here -->
-            </div>
-            <button id="next-quote-button">Next Quote</button>
-        </div>
+       
     </div>
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>About MentalAI </h3>
+                <p>A  AI-powered mental health support</p>
+            </div>
+            <div class="footer-section">
+                <h3>Contact</h3>
+                <p>Email: working</p>
+                <p>Github: working</p>
+            </div>
+            <div class="footer-section">
+                <h3>Credits</h3>
+                <p>Developed by: Faraja, Omar, Samir</p>
+                <p>Version: 1.0.0</p>
+                <p>© 2024 MentalAI Care</p>
+            </div>
+        </div>
+    </footer>
     <script src="/static/static.js"></script>
     <script src="/static/quote.js"></script>
+    <script src="/static/shapes.js"></script>
 </body>
 </html>
