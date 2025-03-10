@@ -1,6 +1,6 @@
-import openai
-from flask_httpauth import HTTPBasicAuth
-from flask import Flask, request, jsonify, send_from_directory, render_template, redirect, url_for, session
+
+from openai import OpenAI
+from flask import Flask, request, jsonify, send_from_directory, render_template
 from flask_cors import CORS
 import os
 import ssl
@@ -11,40 +11,38 @@ ssl._create_default_https_context = ssl._create_unverified_context
 nltk.download('vader_lexicon')
 from dotenv import load_dotenv 
 import database 
-from models.info import app_description  
-from models.mood import analyze_mood, get_gpt_response
-from models.user import add_user, verify_user, initialize_default_users  
-from models.chat import chat_manager, DEFAULT_QUOTES  
 
 database.create_database() 
-initialize_default_users() 
+user_id = "1" #Replace with function to classify user
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-here'  
-auth = HTTPBasicAuth()
 CORS(app)
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def chat_with_gpt(prompt, username=None, include_description=False):
+def chat_with_gpt(prompt):
     try:
-        emotional_state = analyze_mood(prompt)
-        emotion = emotional_state.split()[1]  # Get emotion without intensity
-        
-        gpt_response = get_gpt_response(prompt, emotion)
-        if gpt_response is None:
-            return "I apologize, but I'm having trouble processing your request right now."
-            
-        return gpt_response
-        
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return response.choices[0].message.content.strip()
     except Exception as e:
         print(f"Error with chat: {e}")
         return None
 
+users = {
+    "john": "hello",
+    "susan": "bye"
+}
+
 @auth.verify_password
 def verify_password(username, password):
-    return verify_user(username, password)
+    actual_password = users.get(username)
+    if actual_password == password: 
+        return username
+   
 
 @app.route("/")
 def home_page():
@@ -90,12 +88,12 @@ def serve_static(filename):
 
 @app.route('/chat', methods=['POST'])
 def chat():
+    print("We got here")
     data = request.get_json()
     user_message = data.get('message', '')
     print(f"Received message: {user_message}")
     
-    username = session.get('username')
-    gpt_response = chat_with_gpt(user_message, username=username)
+    gpt_response = chat_with_gpt(user_message)
     if gpt_response is None:
         error_message = f"Sorry, the AI service is currently unavailable. Please try again later or api key not working.{os.getenv('OPENAI_API_KEY')}"
         print(error_message)

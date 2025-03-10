@@ -3,4 +3,3 @@ flask-cors==3.0.10
 openai==0.27.0
 python-dotenv==0.19.0
 flash_httpauth 
-nltk
