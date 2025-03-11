@@ -1,31 +1,33 @@
-
-from openai import OpenAI
-from flask import Flask, request, jsonify, send_from_directory, render_template
+from flask import Flask, request, jsonify, send_from_directory, render_template, redirect, url_for, session
 from flask_cors import CORS
+from flask_httpauth import HTTPBasicAuth
 import os
 import ssl
 import nltk
-from nltk.sentiment import SentimentIntensityAnalyzer
-ssl._create_default_https_context = ssl._create_unverified_context
-
-nltk.download('vader_lexicon')
+import openai
 from dotenv import load_dotenv 
 import database 
+from models.mood import analyze_mood, get_gpt_response
+from models.user import verify_user
+from models.chat import chat_manager  
 
-database.create_database() 
-user_id = "1" #Replace with function to classify user
 load_dotenv()
-
+database.create_database() 
 app = Flask(__name__)
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-key-123')  
 CORS(app)
+auth = HTTPBasicAuth()
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-def chat_with_gpt(prompt):
+def chat_with_gpt(prompt, username=None, include_description=False):
     try:
-        response = client.chat.completions.create(
+        emotion = analyze_mood(prompt) if prompt else "neutral"
+        response = openai.ChatCompletion.create(  # Updated to use direct openai call
             model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}]
+            messages=[
+                {"role": "system", "content": "You are an empathetic mental health support assistant."},
+                {"role": "user", "content": prompt}
+            ]
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
@@ -39,10 +41,7 @@ users = {
 
 @auth.verify_password
 def verify_password(username, password):
-    actual_password = users.get(username)
-    if actual_password == password: 
-        return username
-   
+    return verify_user(username, password)
 
 @app.route("/")
 def home_page():
@@ -72,14 +71,16 @@ def signup_page():
     
     return render_template("signupPage.html")
 
-@app.route("/chat")
+@app.route('/chat')
 def chat_page():
     username = session.get('username')
-    if not username:
-        return redirect(url_for('login_page'))
-        
-    initial_response = chat_with_gpt(f"Hello {username}", username=username, include_description=True)
+    initial_response = "Hi! I'm here to listen and support you. How are you feeling today?"
     initial_quote = chat_manager.get_default_quote()
+    
+    # Allow access even without login: for isuse cuz something it doesn't work
+    if not username:
+        username = "Guest"
+    
     return render_template("main.html", initial_response=initial_response, quote=initial_quote, username=username)
 
 @app.route('/static/<path:filename>')
@@ -88,28 +89,31 @@ def serve_static(filename):
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    print("We got here")
     data = request.get_json()
     user_message = data.get('message', '')
-    print(f"Received message: {user_message}")
+    username = session.get('username', 'Guest')
     
-    gpt_response = chat_with_gpt(user_message)
+    # Get emotion first
+    emotion = analyze_mood(user_message)
+    gpt_response = chat_with_gpt(user_message, username=username)
+    
     if gpt_response is None:
-        error_message = f"Sorry, the AI service is currently unavailable. Please try again later or api key not working.{os.getenv('OPENAI_API_KEY')}"
-        print(error_message)
+        error_message = "Sorry, the AI service is currently unavailable."
         return jsonify({"reply": error_message})
     
-    user_id = auth.current_user()
-    print(f"User ID for logging: {user_id}")
+   
+    response_data = {
+        "reply": gpt_response,
+        "emotion": emotion  
+    }
     
+    if username != 'Guest':
+        try:
+            database.logger(username, user_message, gpt_response)
+        except Exception as e:
+            print(f"Logging error: {e}")
     
-    if user_id is not None:
-        print(f"Logging conversation: user_id={user_id}, user_message={user_message}, gpt_response={gpt_response}")
-        database.logger(user_id, user_message, gpt_response)
-    else:
-        print("Skipping database logging because user is not authenticated")
-    
-    return jsonify({"reply": gpt_response}) 
+    return jsonify(response_data)
 
 @app.route('/quote', methods=['POST'])
 def quote():
@@ -117,7 +121,7 @@ def quote():
     user_message = data.get('message', '')
     print(f"Received message for quote: {user_message}")
     
-    # Get mood for quote context
+    # use the  mood file for quote reply
     mood = analyze_mood(user_message)
     quote_prompt = chat_manager.generate_quote_prompt(user_message, mood)
     

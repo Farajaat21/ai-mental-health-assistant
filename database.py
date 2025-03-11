@@ -14,7 +14,7 @@ def create_database():
             gpt_response  TEXT NOT NULL
         )
     '''
-    cur.execute(table) #If the table doesn't exist this makes one  
+    cur.execute(table)  
     con.commit()
     con.close()
 
@@ -40,14 +40,12 @@ def get_user(username):
     try:
         cur.execute("SELECT username, password FROM users WHERE username = ?", (username,))
         user = cur.fetchone()
-        return user  # Returns (username, password) tuple or None
-    except Exception as e:
+        return user  
         print(f"Database error: {e}")
         return None
     finally:
         con.close()
 
-#This will work to insert user conversations
 def logger(user_id, user_message, gpt_response): 
     con = sq.connect("conversations.db") 
     cur = con.cursor() 
@@ -55,11 +53,9 @@ def logger(user_id, user_message, gpt_response):
     date = dt.now().strftime("%Y-%m-%d %H:%M:%S") #sets the date of the message to when it was sent
     cur.execute("INSERT INTO conversations (user_id, date, user_message, gpt_response) VALUES (?,?,?,?)", 
                    (user_id, date, user_message, gpt_response)) #inserts the user id, date, user messages, and gpt response into the database
-    #line 26-28 sets a group of messages (question + bot response) into the database with their time 
     con.commit()
     con.close()  
 
-#This will retrieve a set of messages 
 def grabber(user_id): 
     con = sq.connect("conversations.db")
     cur = con.cursor()
@@ -92,6 +88,6 @@ def verify(username, password):
     conn.close()
     
     if user and check_password_hash(user[1], password):
-        return user[0]  # Return user_id if authentication is successful
+        return user[0]  
     return None
     

@@ -212,7 +212,7 @@ button:active {
     font: 1em sans-serif;
 }
 .chat-container {
-    background: rgba(30, 30, 30, 0.7);
+    background: rgba(30, 30, 30, 0.1);  /* Changed from 0.7 to 0.6 for more transparency */
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     width: 100%;
@@ -257,6 +257,17 @@ button:active {
     margin-left: 10px;
 }
 
+.bot-message blockquote {
+    color: #9f7aea;
+    font-style: italic;
+    border-left: 4px solid #9f7aea;
+    padding-left: 1rem;
+    margin: 1rem 0;
+    background: rgba(159, 122, 234, 0.1);
+    padding: 1rem;
+    border-radius: 0.5rem;
+}
+
 #next-quote-button {
     padding: 10px;
     border: 1px solid #ccc;
@@ -270,7 +281,7 @@ button:active {
     width: 90%;        /* Changed to percentage for better responsiveness */
     margin: 20px auto; /* Center horizontally */
     padding: 20px;
-    background: rgba(30, 30, 30, 0.8);
+    background: rgba(30, 30, 30, 0.7);
     backdrop-filter: blur(8px);
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);

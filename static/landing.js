@@ -1,4 +1,20 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Add smooth scroll functionality
+    document.querySelectorAll('.scroll-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = link.getAttribute('href');
+            const targetElement = document.querySelector(targetId);
+            
+            if (targetElement) {
+                window.scrollTo({
+                    top: targetElement.offsetTop - 100, // Offset for nav bar
+                    behavior: 'smooth'
+                });
+            }
+        });
+    });
+
     // Smooth scroll sections
     gsap.registerPlugin(ScrollTrigger);
 

@@ -27,44 +27,83 @@ function fetchQuote(userMessage) {
     .catch(error => console.error('Error fetching quote:', error));
 }
 
-function sendMessage() {
+// Emotion to emoji mapping
+const emotionEmojis = {
+    "Deep sadness": "😢",
+    "Frustration": "😤",
+    "Disappointment": "😔",
+    "Emptiness": "😶",
+    "Inadequacy": "😟",
+    "Helplessness": "😰",
+    "Fear": "😨",
+    "Guilt": "😣",
+    "Loneliness": "🥺",
+    "Overwhelmed": "😫",
+    "Faliure": "😩",
+    "Anger": "😠",
+    "General sadness": "😕",
+    "Jealousy": "😒",
+    "Rejected": "💔",
+    "No sadness": "😊"
+};
+
+// Function to update emoji with animation
+function updateMoodEmoji(emotion) {
+    const emojiElement = document.getElementById('mood-emoji');
+    const newEmoji = emotionEmojis[emotion] || "😊";
+    
+    gsap.to(emojiElement, {
+        opacity: 0,
+        y: -20,
+        duration: 0.3,
+        onComplete: () => {
+            emojiElement.textContent = newEmoji;
+            gsap.to(emojiElement, {
+                opacity: 1,
+                y: 0,
+                duration: 0.3,
+                ease: "back.out"
+            });
+        }
+    });
+}
+
+async function sendMessage() {
     const userInput = document.getElementById("user-input").value;
     if (userInput.trim() === "") return;
 
-    // Signal that chat has started
-    if (window.startedChat) {
-        window.startedChat();
-    }
-
-    console.log('Sending message:', userInput);
     displayMessage(userInput, 'user');
 
-    fetch("/chat", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ message: userInput }),
-    })
-    .then((response) => {
+    try {
+        const response = await fetch("/chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ message: userInput }),
+        });
+
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
-        return response.json();
-    })
-    .then((data) => {
-        console.log('Received chat response:', data);
+
+        const data = await response.json();
+        console.log('Received response with emotion:', data.emotion);
+
         if (data.error) {
             displayMessage("Sorry, I encountered an error. Please try again.", 'bot');
         } else {
             displayMessage(data.reply, 'bot');
-            fetchQuote(userInput); 
+            if (data.emotion) {
+                console.log('Updating emoji for emotion:', data.emotion);
+                updateMoodEmoji(data.emotion);
+            }
+            fetchQuote(userInput);
         }
-    })
-    .catch((error) => {
-        console.error("Error sending message:", error);
+    } catch (error) {
+        console.error("Error:", error);
         displayMessage("Sorry, I encountered an error. Please try again.", 'bot');
-    });
+    }
 
     document.getElementById("user-input").value = "";
 }
