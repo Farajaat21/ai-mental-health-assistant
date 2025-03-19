@@ -8,4 +8,5 @@ conversations.db
 *.pem
 *.key
 .env*
+!.env.example
 venv/
