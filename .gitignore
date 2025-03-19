@@ -5,3 +5,7 @@ __pycache__/
 conversations.db
 .DS_Store
 /certs/
+*.pem
+*.key
+.env*
+venv/
