@@ -73,66 +73,40 @@ async function sendMessage() {
     try {
         const response = await fetch("/chat", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ message: userInput }),
             credentials: 'same-origin'
         });
 
         const data = await response.json();
-        console.log("Response data:", data); // Debug log
-
+        
         if (data.error || !response.ok) {
             throw new Error(data.reply || 'Network error');
         }
 
-        // For emotional content, show quote first then response
-        if (data.emotion !== "Neutral" && data.quote) {
-            console.log("Displaying quote for emotion:", data.emotion);
-            
-            // Show quote first
-            setTimeout(() => {
-                const quoteDiv = document.createElement('div');
-                quoteDiv.classList.add('message', 'bot-message', 'quote-message');
-                quoteDiv.innerHTML = `<blockquote>${data.quote}</blockquote>`;
-                document.getElementById('chat-container').appendChild(quoteDiv);
+        let quotePart = null;
+        let responsePart = data.reply;
 
-                const chatContainer = document.getElementById('chat-container');
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-                
-
-                
-                chatContainer.scrollTo({
-                    top: chatContainer.scrollHeight,
-                    behavior: 'smooth'
-                });
-                // Then show response with a slight delay
-                setTimeout(() => {
-                    displayMessage(data.reply, 'bot');
-                    chatContainer.scrollTop = chatContainer.scrollHeight;
-                    
-                }, 500);
-            }, 800);
+        if (data.reply.includes("QUOTE:") && data.reply.includes("RESPONSE:")) {
+            const parts = data.reply.split("RESPONSE:");
+            quotePart = parts[0].replace("QUOTE:", "").trim();
+            responsePart = parts[1].trim();
+            // Create a single div with the quote and response separated by extra space
+            const quoteDiv = document.createElement('div');
+            quoteDiv.classList.add('message', 'bot-message', 'quote-message');
+            quoteDiv.innerHTML = `<blockquote>${quotePart}</blockquote><p>&nbsp;&nbsp;${responsePart}</p>`;
+            document.getElementById('chat-container').appendChild(quoteDiv);
         } else {
-            // For casual messages, just show response
-            displayMessage(data.reply, 'bot');
+            displayMessage(responsePart, 'bot');
         }
 
-        // Update mood emoji if valid emotion
         if (data.emotion && emotionEmojis[data.emotion]) {
-            console.log("Updating emoji for emotion:", data.emotion);
             updateMoodEmoji(data.emotion);
-        }
-        
-        // Update rotating quote
-        if (data.default_quote) {
-            document.getElementById('quote').innerHTML = `<p class="quote-text">${data.default_quote}</p>`;
         }
 
     } catch (error) {
         console.error("Error:", error);
-        displayMessage("I'm here to help. Could you please share more about what you're feeling? Service unavalible", 'bot');
+        displayMessage("I apologize, but I'm having trouble responding right now. Could you please try again?", 'bot');
     }
 
     document.getElementById("user-input").value = "";
@@ -146,40 +120,6 @@ document.getElementById("user-input").addEventListener("keypress", function(even
     }
 });
 
-function toggleMic() {
-    const micOff = document.querySelector('.mic-off');
-    const micOn = document.querySelector('.mic-on');
-    micOff.classList.toggle('hidden');
-    micOn.classList.toggle('hidden');
-}
-
-function toggleVideo() {
-    const videoOff = document.querySelector('.video-off');
-    const videoOn = document.querySelector('.video-on');
-    videoOff.classList.toggle('hidden');
-    videoOn.classList.toggle('hidden');
-}
-
-async function startRecording() {
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        console.log('Microphone access granted');
-        
-        alert("Microphone activated! (Recording functionality coming soon)");
-    } catch (err) {
-        console.error('Error accessing microphone:', err);
-        alert("Could not access microphone. Please check your permissions.");
-    }
-}
-
-async function openCamera() {
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        console.log('Camera access granted');
-        alert("Camera activated! (Video functionality coming soon)");
-    } catch (err) {
-        console.error('Error accessing camera:', err);
-        alert("Could not access camera. Please check your permissions or stite still not securied.");
-    }
-}
+// Removed voice recognition functions (toggleMic, startRecording, openCamera)
+// Voice functionality now resides in voiceRecognition.js
 

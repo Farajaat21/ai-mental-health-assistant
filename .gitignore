@@ -10,3 +10,4 @@ conversations.db
 .env*
 !.env.example
 venv/
+.git-old/

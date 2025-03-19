@@ -23,21 +23,31 @@ class ChatManager:
             "🌱 Growth takes time and patience",
             "💫 Your story isn't over yet"
         ]
-        self.greeting_responses = [
-            "Hi! 👋 How can I help you today?",
-            "Hello again! Is there something specific you'd like to talk about?",
-            "I notice you're saying hello again. Is everything okay?",
-            "I'm still here! Would you like to talk about something in particular?",
-            "Hey! I'm listening if you want to share what's on your mind."
-        ]
-        self.greeting_count = {}  # Track greeting counts per user
-        self.informal_responses = {
-            "idk": "That's okay! 'IDK' means 'I don't know'. If you're feeling uncertain or confused about something, I'm here to help. Would you like to talk about what's on your mind?",
-            "k": "I see! Just checking - is there anything specific you'd like to discuss?",
-            "nah": "Alright! But remember, I'm here if you need someone to talk to.",
-            "whatever": "I sense you might be feeling dismissive. Is everything okay?",
-            "idc": "I understand you might not care right now, but I'm here to listen if you want to talk about anything bothering you."
-        }
+        self.conversation_history = {}  
+
+    def add_to_history(self, username, message, role='user'):
+        """Add message to conversation history"""
+        if username not in self.conversation_history:
+            self.conversation_history[username] = []
+            # Add initial context about the user
+            self.conversation_history[username].append({
+                'role': 'system',
+                'content': f'User identified as: {username}' if username != 'Guest' else 'Anonymous user'
+            })
+        
+        self.conversation_history[username].append({
+            'role': role,
+            'content': message
+        })
+        
+        # Keep last 10 messages for context
+        self.conversation_history[username] = self.conversation_history[username][-10:]
+
+    def get_conversation_context(self, username):
+        """Get recent conversation history"""
+        if username not in self.conversation_history:
+            return []
+        return [msg['content'] for msg in self.conversation_history[username]]
 
     def get_default_quote(self):
         import random
@@ -64,27 +74,30 @@ class ChatManager:
             logging.error(f"Error generating quote prompt: {e}")
             return None
 
-    def handle_repeated_greeting(self, username):
-        """Handle repeated greetings from the same user"""
-        count = self.greeting_count.get(username, 0)
-        self.greeting_count[username] = count + 1
-        
-        if count >= len(self.greeting_responses) - 1:
-            return self.greeting_responses[-1]
-        return self.greeting_responses[count]
+# Update get_dynamic_greeting to handle names better
+def get_dynamic_greeting(username):
+    """Generate personalized initial greeting"""
+    from models.info import app_description
+    greeting_prompt = f"""
+    Generate an initial greeting for a mental health support conversation.
+    User status: {"Returning user named " + username if username != "Guest" else "New anonymous user"}
 
-    def reset_greeting_count(self, username):
-        """Reset the greeting counter for a user"""
-        self.greeting_count[username] = 0
-
-    def handle_informal_message(self, message):
-        """Handle informal/casual messages appropriately"""
-        message = message.lower().strip()
-        
-        # Check if it's an informal message we recognize
-        if message in self.informal_responses:
-            return self.informal_responses[message]
-            
-        return None
+    Requirements:
+    - For named users, welcome them by name.
+    - For anonymous users, provide a warm general welcome.
+    - Keep it simple and encouraging.
+    - Always include a follow-up question.
+    """
+    
+    import openai
+    response = openai.ChatCompletion.create(
+        model="gpt-4",  # updated to use gpt-4
+        messages=[
+            {"role": "system", "content": app_description},
+            {"role": "user", "content": greeting_prompt}
+        ],
+        temperature=0.7
+    )
+    return response.choices[0].message.content.strip()
 
 chat_manager = ChatManager()
