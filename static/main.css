@@ -41,12 +41,10 @@ button {
     font-size: 16px;
     transition: background-color 0.3s ease, transform 0.3s ease;
 }
-button svg {
-    fill: var(--svg_color);
-}
+
 button:hover,
 button:active {
-    transform: scale(1.1); /* Expand on hover and click */
+    transform: scale(1.1);
 }
 .wrapper {
     max-width: 100%;
@@ -106,7 +104,9 @@ button:active {
     border: 1px solid #ccc; /* Border line */
     border-radius: 10px;
     padding: 10px;
-    margin-top: 30px;;
+    margin-top: 30px;
+    display: flex;
+    align-items: center;
 }
 .right_main-chat-input input {
     flex: 1;
@@ -116,18 +116,39 @@ button:active {
     border-radius: 10px;
     margin-right: 10px;
     outline: none; /* Remove focus color */
+    resize: none; /* Prevent manual resizing */
+    overflow: hidden; /* Hide scrollbar */
+    min-height: 40px; /* Minimum height */
+    max-height: 200px; /* Maximum height */
+    box-sizing: border-box; /* Ensure padding is included in height calculation */
+    transition: height 0.2s ease; /* Smooth transition for height change */
+    width: 100%; /* Ensure it takes full width */
 }
 .right_main-chat-input button {
-    padding: 10px;
-    background-color: var(--svg_background_color);
-    color: var(--svg_color);
+    padding: 8px;
+    background-color: rgba(26, 24, 24, 0.398);
     border: none;
-    border-radius: 10px;
+    border-radius: 15px;
     cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.3s ease;
+    transition: transform 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+
 }
 .right_main-chat-input button svg {
-    fill: var(--svg_color);
+    
+    width: 24px;
+    height: 24px;
+    filter: brightness(0) invert(1);
+    
+}
+.input-buttons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
 }
 .right_main-chat-input button:hover,
 .right_main-chat-input button:active {
@@ -333,6 +354,14 @@ button:active {
     0% { transform: translateX(100%); opacity: 1; }
     90% { transform: translateX(0); opacity: 1; }
     100% { transform: translateX(-100%); opacity: 0; }
+}
+@keyframes toggleIcon {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.mic-on, .mic-off, .video-on, .video-off {
+    animation: toggleIcon 0.3s ease-out;
 }
 
 .nav-header {
@@ -836,4 +865,18 @@ button:active {
 /* Smooth scroll behavior */
 html {
     scroll-behavior: smooth;
+}
+
+.quote-message {
+    background-color: rgba(159, 122, 234, 0.1) !important;
+    border-left: 4px solid #9f7aea !important;
+    font-style: italic;
+    color: #6b46c1 !important;
+    margin: 1rem 0;
+    padding: 1rem !important;
+}
+
+.quote-message blockquote {
+    margin: 0;
+    color: inherit;
 }

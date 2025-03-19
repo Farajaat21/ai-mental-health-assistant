@@ -1,3 +1,5 @@
+from database import add_user_to_db, get_user
+
 users = {
     "john": "hello",
     "susan": "bye",

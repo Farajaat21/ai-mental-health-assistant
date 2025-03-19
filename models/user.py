@@ -1,6 +1,9 @@
 from database import add_user_to_db, get_user
+import logging
 
-# Pre-existing users
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+
 DEFAULT_USERS = {
     "john": "hello",
     "susan": "bye",
@@ -8,17 +11,11 @@ DEFAULT_USERS = {
     "faraja": "faraja"
 }
 
-def initialize_default_users():
-    for username, password in DEFAULT_USERS.items():
-        add_user_to_db(username, password)
-
 def verify_user(username, password):
-    # First check database
     user = get_user(username)
     if user and user[1] == password:
         return True
     
-    # Then check default users as fallback
     return DEFAULT_USERS.get(username) == password
 
 def add_user(username, password):

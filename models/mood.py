@@ -1,9 +1,14 @@
 import openai
-from nltk.sentiment import SentimentIntensityAnalyzer
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 def classify_emotion(user_input):
-    """Use OpenAI to classify different shades of sadness."""
+    """Use GPT to classify emotions and detect conversation depth."""
+    
     classification_prompt = f"""
+    Analyze this message and classify the emotional state: "{user_input}"
+    
     The user provided this message: "{user_input}"
     Classify the emotional state of the user into one of the following categories: 
     - Deep sadness (grief, sorrow)
@@ -15,139 +20,123 @@ def classify_emotion(user_input):
     - Fear (Sense of danger, anxiety, uncertainty)
     - Guilt (Self-blame, regret, moral discomfort)
     - Loneliness (Feeling isolated, unseen, disconnected)
-    - Overwhelmed (Too many demands, mentally overloaded)
-    - Faliure (Defeat, self-doubt, and regret)
-    - Anger (Intense frustration, irritation, rage)
+    - Overwhelmed (Too many demands, mentally overloaded, feeling suffocated, anxious and stressed)
+    - Failure (Defeat, self-doubt, and regret)
+    - Anger (Intense frustration, irritation, explosive outbursts or rage)
     - General sadness (neutral sadness)
     - Jealousy (Desire with insecurity and envy)
     - Rejected (Unwanted, dismissed, and unworthy)
     - No sadness (if none of the above)
-
-    Only return the category name.
+    
+    - Neutral (ONLY for greetings or casual messages that doesn't indicate any sad emotion)
+    
+    Respond with ONLY the emotion name, nothing else.
+    Be very sensitive to emotional content - if there's ANY hint of negative emotion, don't use Neutral.
     """
     
     try:
-        response = openai.ChatCompletion.create(  
+        if not openai.api_key:
+            return "Neutral", None
+
+        response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "You are an emotion detection assistant."},
+                {"role": "system", "content": "You are an emotion detection specialist. Only respond with the emotion name."},
                 {"role": "user", "content": classification_prompt}
-            ]
+            ],
+            temperature=0.3
         )
+        
         emotion = response.choices[0].message.content.strip()
+        print(f"Detected emotion: {emotion}")  
         
+        if emotion == "Neutral":
+            return emotion, user_input
+
         
-        if emotion == "Deep sadness":
-            prompt = f"User is a teenager/young adult. The user is deeply sad and possibly grieving. Analyze the user's input and provide two things based on the user input: A quote suited for the situation based on the analysis and A comforting and deeply empathetic conversatioal response."
-        elif emotion == "Frustration":
-            prompt = f"User is a teenager/young adult. The user is frustrated and upset. Analyze the user's input and provide two things based on the user input: A quote suited for the situation based on the analysis and a calm response, validating their feelings, and offering constructive advice."
-        elif emotion == "Disappointment":
-            prompt = f"User is a teenager/young adult. The user is disappointed. Analyze the user's input and provide two things based on the user input: A quote suited for the situation based on the analysis and Offer reassurance and help them see potential positives or ways to improve."
-        elif emotion == "Emptiness":
-            prompt = f"User is a teenager/young adult. The user feels empty, as if something is missing in their life or lacking purpose. Analyze the user's input and provide two things based on the user input: A quote suited for the situation based on the analysis and respond with deep empathy and offer words that help them feel seen and understood."
-        elif emotion == "Inadequacy":
-            prompt = f"User is a teenager/young adult. The user feels inadequate, like they are not good enough. Analyze the user's input and provide two things based on the user input: A quote suited for the situation based on the analysis and provide reassurance, remind them of their worth, and encourage them to see their strengths."
-        elif emotion == "Helplessness":
-            prompt = f"User is a teenager/young adult. The user feels helpless, like they have no control over their situation or is powerless. Analyze the user's input and provide two things based on the user input: A quote suited for the situation based on the analysis and Offer gentle guidance, helping them find small steps they can take to regain a sense of control."
-        elif emotion == "Fear":
-            prompt = f"User is a teenager/young adult. The user feels afraid or anxious, like they're uncertain. Analyze the user's input and provide two things based on the user input: A quote suited for the situation based on the analysis and Respond with reassurance, helping them feel safe and supported, and if possible, guide them through their fear logically."
-        elif emotion == "Guilt":
-            prompt = f"User is a teenager/young adult. The user is experiencing guilt, like they regret doing something or self-blaming themselves. Analyze the user's input and provide two things based on the user input: A quote suited for the situation based on the analysis and offer comfort and help them reflect on their feelings without self-judgment, encouraging self-compassion and growth."
-        elif emotion == "Loneliness":
-            prompt = f"User is a teenager/young adult. The user feels lonely and isolated, like they're unseen. Analyze the user's input and provide two things based on the user input: A quote suited for the situation based on the analysis and provide words of comfort, reminding them they are not alone and encouraging them to connect with others in meaningful ways."
-        elif emotion == "Overwhelmed":
-            prompt = f"User is a teenager/young adult. The user is feeling overwhelmed by their responsibilities or emotions, like they're mentally overloaded or feel suffocated. Analyze the user's input and provide two things based on the user input: A quote suited for the situation based on the analysis and offer calming words and practical advice to help them regain clarity and take things one step at a time."
-        elif emotion == "Faliure":
-            prompt = f"User is a teenager/young adult. The user feels defeated, like they have failed and wasted their energy. Analyze the user's input and provide two things based on the user input: A quote suited for the situation based on the analysis and provide encouragement, helping them reframe their experience as a learning opportunity rather than a final defeat."
-        elif emotion == "Anger":
-            prompt = f"User is a teenager/young adult. The user feels intense frustration or rage, like explosive outbursts or irritation. Analyze the user's input and provide two things based on the user input: A quote suited for the situation based on the analysis and respond with a calming and validating message, helping them process their emotions in a constructive way."
-        elif emotion == "General sadness":
-            prompt = f"User is a teenager/young adult. The user is feeling generally sad. Analyze the user's input and provide two things based on the user input: A quote suited for the situation based on the analysis and respond with gentle encouragement and support."
-        elif emotion == "Jealousy":
-            prompt = f"User is a teenager/young adult. The user is experiencing jealousy, like a desire with insecurity and envy. Analyze the user's input and provide two things based on the user input: A quote suited for the situation based on the analysis and help them understand their emotions without judgment and encourage self-reflection and personal growth."
-        elif emotion == "Rejected":
-            prompt = f"User is a teenager/young adult. The user feels rejected and hurt, like they're unwanted or unworthy. Analyze the user's input and provide two things based on the user input: A quote suited for the situation based on the analysis and offer comforting words, reminding them of their value and helping them process their emotions in a healthy way."
-        elif emotion == "No sadness":
-            prompt = f"The user does not seem sad. Provide a normal, friendly response and engage them in positive conversation. User input: {user_input}"
-        else:
-            
-            sia = SentimentIntensityAnalyzer()
-            sentiment = sia.polarity_scores(user_input)
-            if sentiment['compound'] <= -0.5:
-                emotion = "Deep sadness"
-            elif sentiment['compound'] < -0.2:
-                emotion = "General sadness"
-            elif sentiment['compound'] < 0:
-                emotion = "Disappointment"
-            else:
-                emotion = "No sadness"
-            prompt = f"The user seems to be feeling {emotion}. Provide an appropriate supportive response."
-            
-        return emotion, prompt
-        
-    except Exception as e:
-        print(f"Error in emotion classification: {e}")
-        return "No sadness", "Provide a friendly and supportive response."
+        slang_classification_prompt = f"""
+        Analyze this text and determine if it uses informal language, slang, or a casual tone:
+        "{user_input}"
 
-def analyze_mood(text):
-    """Get detailed emotion analysis."""
-    emotion, prompt = classify_emotion(text)
-    return emotion
+        Return one of the following options:
+        - "slang" if it contains informal language or strong slang
+        - "casual" if it contains informal language but no strong slang
+        - "formal" if it contains a more formal tone
+        """
 
-def get_emotion_prompt(emotion, user_input):
-    """Generate appropriate prompt based on emotional state."""
-    base_instructions = """
-    You are a supportive mental health AI assistant. Your responses should:
-    1. Show deep empathy and understanding
-    2. Validate their emotions
-    3. ALWAYS ask at least one relevant follow-up question
-    4. Keep responses conversational and warm
-    5. Provide gentle encouragement
-    6. Only include an inspirational quote if the user is expressing strong emotions or seeking motivation
-    7. When including a quote, format it as: <blockquote>quote text</blockquote>
-    8. Focus on active listening and understanding
-    9. Never give medical advice
-    10. Look for patterns in their responses to provide better support
-    
-    Important: Do not include quotes for casual greetings or simple questions.
-    Only include quotes when they would genuinely help the emotional situation.
-    """
-    
-    emotion_prompts = {
-        "Deep sadness": "The user is experiencing deep sadness or grief. First validate their pain, then offer gentle comfort and ask about their support system.",
-        "Frustration": "The user is frustrated. Acknowledge their feelings, help identify the source, and explore constructive ways to handle it.",
-        "Disappointment": "The user is disappointed. Show understanding, help reframe the situation, and ask about their hopes going forward.",
-        "Emptiness": "The user feels empty or disconnected. Help them explore these feelings and ask about what usually brings them joy or meaning.",
-        "Inadequacy": "The user feels inadequate. Validate their worth, highlight their strengths, and ask about their achievements.",
-        "Helplessness": "The user feels helpless. Break things down into smaller, manageable steps and ask about what they can control.",
-        "Fear": "The user is afraid. Create a safe space, validate their concerns, and explore the root of their fears.",
-        "Guilt": "The user feels guilty. Help them process without judgment and ask about self-forgiveness.",
-        "Loneliness": "The user feels lonely. Show they're not alone, and ask about potential connections in their life.",
-        "Overwhelmed": "The user is overwhelmed. Help them prioritize and ask about immediate pressure points.",
-        "Failure": "The user feels like a failure. Reframe setbacks as learning opportunities and ask about their goals.",
-        "Anger": "The user is angry. Validate their feelings while exploring healthy expression and ask about triggers.",
-        "General sadness": "The user is feeling down. Offer gentle support and ask about what might help lift their spirits.",
-        "Jealousy": "The user is feeling jealous. Explore these feelings without judgment and ask about their own journey.",
-        "Rejected": "The user feels rejected. Reinforce their inherent worth and ask about their support network.",
-        "No sadness": "Engage in supportive conversation and ask about their general wellbeing."
-    }
-    
-    specific_prompt = emotion_prompts.get(emotion, emotion_prompts["No sadness"])
-    return f"{base_instructions}\n\nContext: {specific_prompt}\n\nUser input: {user_input}\n\nProvide a response that includes:\n1. A relevant quote\n2. Empathetic understanding\n3. At least one thoughtful follow-up question"
-
-def get_gpt_response(user_input, emotion):
-    """Get GPT response based on emotional state."""
-    prompt = get_emotion_prompt(emotion, user_input)
-    
-    try:
-        response = openai.ChatCompletion.create(  
+        slang_response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "You are an empathetic mental health support assistant."},
-                {"role": "user", "content": prompt}
-            ]
+                {"role": "system", "content": "You are a language analysis specialist. Analyze text to classify if it uses slang, casual language, or formal language."},
+                {"role": "user", "content": slang_classification_prompt}
+            ],
+            temperature=0.3
         )
-        return response.choices[0].message.content.strip()
+        
+        tone = slang_response.choices[0].message.content.strip().lower()
+
+        if emotion == "Neutral" or "hello" in user_input.lower() or "hello" in user_input.lower():
+            return "Neutral", user_input
+
+        if tone == "slang":
+            prompt = f"""User is experiencing {emotion} and shared: "{user_input}"
+            
+            Provide two parts in this exact format:
+            QUOTE: "[A meaningful, comforting quote that acknowledges their pain while offering hope]" - [Author]
+            
+            RESPONSE: [Write an empathetic response in a slang tone that matches the user's language. Use informal language and slang where appropriate. End with a casual follow-up question to keep the conversation going.]
+            
+            User input: {user_input}
+            - Validate their emotions deeply
+            - Show empathy and understanding
+            - Use informal, slang-filled language
+            - Always end with a casual question to keep the conversation flowing
+            - Keep it warm and understanding
+            - Be sensitive to their emotional state
+            """
+            
+        elif tone == "casual":
+            prompt = f"""User is experiencing {emotion} and shared: "{user_input}"
+            
+            Provide two parts in this exact format:
+            QUOTE: "[A meaningful, comforting quote that acknowledges their pain while offering hope]" - [Author]
+            
+            RESPONSE: [Write an empathetic response in a casual tone that validates their feelings. Use informal but not slang-filled language. Always end with a gentle follow-up question.]
+            
+            User input: {user_input}
+            - Validate their emotions deeply
+            - Show empathy and understanding
+            - Offer comfort and reassurance
+            - Always end with a casual, thoughtful question
+            - Be warm and compassionate
+            - Encourage sharing more, if the user feels comfortable
+            """
+
+        else:
+            prompt = f"""User is experiencing {emotion} and shared: "{user_input}"
+            
+            Provide two parts in this exact format:
+            QUOTE: "[A meaningful, comforting quote that acknowledges their pain while offering hope]" - [Author]
+            
+            RESPONSE: [Write an empathetic response in a formal tone that validates their feelings. Use formal, polite language. Always end with a gentle follow-up question.]
+            
+            User input: {user_input}
+            - Validate their emotions deeply
+            - Show empathy and understanding
+            - Offer comfort and reassurance
+            - Always end with a thoughtful, polite follow-up question
+            - Be warm, compassionate, and understanding
+            - Avoid informal language
+            - Ensure that the tone is respectful and nurturing
+            """
+
+        return emotion, prompt
+
     except Exception as e:
-        print(f"Error getting GPT response: {e}")
-        return None
+        logging.error(f"Error during emotion classification: {e}")
+        return "Neutral", user_input
+
+def analyze_mood(user_input: str) -> tuple:
+    """Enhanced wrapper for classify_emotion that handles deep conversations."""
+    emotion, prompts = classify_emotion(user_input)
+    return emotion, prompts
