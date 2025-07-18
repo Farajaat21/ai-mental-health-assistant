@@ -29,11 +29,6 @@ class ChatManager:
         """Add message to conversation history"""
         if username not in self.conversation_history:
             self.conversation_history[username] = []
-            # Add initial context about the user
-            self.conversation_history[username].append({
-                'role': 'system',
-                'content': f'User identified as: {username}' if username != 'Guest' else 'Anonymous user'
-            })
         
         self.conversation_history[username].append({
             'role': role,
@@ -44,10 +39,10 @@ class ChatManager:
         self.conversation_history[username] = self.conversation_history[username][-10:]
 
     def get_conversation_context(self, username):
-        """Get recent conversation history"""
+        """Get conversation history for a user"""
         if username not in self.conversation_history:
             return []
-        return [msg['content'] for msg in self.conversation_history[username]]
+        return self.conversation_history[username]
 
     def get_default_quote(self):
         import random
@@ -64,7 +59,8 @@ class ChatManager:
                 "Hopelessness": "When struggling to find hope",
                 "Grief": "When dealing with grief and loss",
                 "Trauma": "When healing from trauma",
-                "Stress": "When overwhelmed by stress"
+                "Stress": "When overwhelmed by stress",
+                "Academic stress": "When struggling with academic challenges and pressure"
             }
             
             template = emotion_templates.get(mood, f"When dealing with {mood}")
@@ -77,27 +73,61 @@ class ChatManager:
 # Update get_dynamic_greeting to handle names better
 def get_dynamic_greeting(username):
     """Generate personalized initial greeting"""
-    from models.info import app_description
-    greeting_prompt = f"""
-    Generate an initial greeting for a mental health support conversation.
-    User status: {"Returning user named " + username if username != "Guest" else "New anonymous user"}
+    try:
+        from models.info import app_description
+        
+        if not openai.api_key:
+            raise ValueError("OpenAI API key not configured")
 
-    Requirements:
-    - For named users, welcome them by name.
-    - For anonymous users, provide a warm general welcome.
-    - Keep it simple and encouraging.
-    - Always include a follow-up question.
-    """
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": app_description},
+                {"role": "user", "content": f"Generate a warm greeting for {username}"}
+            ],
+            temperature=0.7,
+            max_tokens=100,  # Limit token usage
+            timeout=10  # Add timeout
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        logging.error(f"Error generating greeting: {str(e)}")
+        # Return a fallback greeting
+        if username != "Guest":
+            return f"Welcome back, {username}! How are you feeling today?"
+        return "Hello! I'm here to listen and support you. How are you feeling today?"
+
+def format_sadness_response(emotion, message):
+    """Format the prompt for sadness-related emotions."""
+    # Always include an encouraging quote for sad emotions
+    return f'''
+    The user is experiencing {emotion}. Their message: "{message}"
     
-    import openai
-    response = openai.ChatCompletion.create(
-        model="gpt-4",  # updated to use gpt-4
-        messages=[
-            {"role": "system", "content": app_description},
-            {"role": "user", "content": greeting_prompt}
-        ],
-        temperature=0.7
-    )
-    return response.choices[0].message.content.strip()
+    IMPORTANT - Your response MUST follow this EXACT format:
+    1. Start with a relevant quote in quotes followed by author: "Quote" - Author
+    2. Leave one blank line
+    3. Write a validating and empathetic response
+    4. End with a gentle question to encourage sharing
+    
+    Example format:
+    "Hope is the thing with feathers that perches in the soul" - Emily Dickinson
+    
+    I understand you're feeling [emotion]. [Empathetic response]
+    
+    [Gentle follow-up question]?
+    '''
+
+def process_response(response_text):
+    """Ensure response follows the correct format with quote."""
+    if '"' not in response_text:
+        quote = chat_manager.get_default_quote()
+        return f'"{quote}"\n\n{response_text}'
+        
+    parts = response_text.split('\n\n', 1)
+    if len(parts) < 2:
+        quote = parts[0] if '"' in parts[0] else chat_manager.get_default_quote()
+        return f'{quote}\n\n{response_text}'
+        
+    return response_text
 
 chat_manager = ChatManager()

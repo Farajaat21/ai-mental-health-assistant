@@ -1,4 +1,4 @@
-#!/Users/farajaathanas/Documents/GitHub/Ai-Mental-Health-Chatbot/.venv/bin/python
+#!/Users/farajaathanas/Documents/GitHub/Ai-Mental-Health-Chatbot/.venv/bin/python3.13
 # -*- coding: utf-8 -*-
 import re
 import sys

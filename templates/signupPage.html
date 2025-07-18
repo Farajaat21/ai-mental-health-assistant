@@ -16,7 +16,7 @@
         <div class="shape shape-3"></div>
         <div class="shape shape-4"></div>
     </div>
-    <form class="form" id="signup-form" method="POST">
+    <form class="form" id="signup-form" method="POST" action="/signup">
        <p class="form-title">Create a new account</p>
         <div class="input-container">
           <input name="username" placeholder="Enter username" type="text" required>
@@ -34,6 +34,11 @@
               <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
             </svg>
           </span>
+        </div>
+        <div class="error-message" {% if error %} style="display: block;" {% endif %}>
+            {% if error %}
+                <p>{{ error }}</p>
+            {% endif %}
         </div>
          <button class="submit" type="submit">
         Sign up

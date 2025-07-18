@@ -1,4 +1,4 @@
-from database import add_user_to_db, get_user
+from database import add_user_to_db, get_user, verify as db_verify
 import logging
 
 # Configure logging
@@ -12,14 +12,29 @@ DEFAULT_USERS = {
 }
 
 def verify_user(username, password):
-    user = get_user(username)
-    if user and user[1] == password:
+    # First check if it's a default user
+    if username in DEFAULT_USERS and DEFAULT_USERS[username] == password:
+        logging.info(f"Default user {username} verified successfully")
         return True
     
-    return DEFAULT_USERS.get(username) == password
+    # Then check database
+    user_id = db_verify(username, password)
+    if user_id:
+        logging.info(f"Database user {username} verified successfully")
+        return True
+    
+    logging.warning(f"User verification failed for {username}")
+    return False
 
 def add_user(username, password):
     # Don't allow overwriting default users
     if username in DEFAULT_USERS:
+        logging.warning(f"Attempt to add default user {username} blocked")
         return False
+    
+    # Check if user already exists in database
+    if get_user(username):
+        logging.warning(f"User {username} already exists in database")
+        return False
+        
     return add_user_to_db(username, password)

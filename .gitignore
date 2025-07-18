@@ -11,3 +11,6 @@ conversations.db
 !.env.example
 venv/
 .git-old/
+
+# SSL Certificates
+*.pem
